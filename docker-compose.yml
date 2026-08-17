@@ -90,6 +90,12 @@ services:
       - ./config-repo:/config-repo
     networks:
       - banco-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8888/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 20s
 
   ms-eureka:
     build: ./ms-eureka
@@ -134,10 +140,14 @@ services:
     container_name: banco-ms-customers
     restart: unless-stopped
     depends_on:
-      - mongodb
-      - config-server
-      - ms-eureka
-      - redis
+      mongodb:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+      redis:
+        condition: service_started
     ports:
       - "8090:8090"
     environment:
@@ -154,11 +164,16 @@ services:
     container_name: banco-ms-accounts
     restart: unless-stopped
     depends_on:
-      - mongodb
-      - config-server
-      - ms-eureka
-      - ms-customers
-      - kafka
+      mongodb:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+      ms-customers:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - "8091:8091"
     environment:
@@ -176,11 +191,16 @@ services:
     container_name: banco-ms-credits
     restart: unless-stopped
     depends_on:
-      - mongodb
-      - config-server
-      - ms-eureka
-      - ms-customers
-      - kafka
+      mongodb:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+      ms-customers:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - "8092:8092"
     environment:
@@ -197,10 +217,14 @@ services:
     container_name: banco-ms-yanki
     restart: unless-stopped
     depends_on:
-      - mongodb
-      - config-server
-      - ms-eureka
-      - ms-accounts
+      mongodb:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      ms-eureka:
+        condition: service_started
+      ms-accounts:
+        condition: service_started
     ports:
       - "8093:8093"
     environment:
