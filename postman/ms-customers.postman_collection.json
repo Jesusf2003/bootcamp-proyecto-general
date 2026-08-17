@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "Banco - ms-customers (Parte I)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8090/api/v1/customers" },
+    { "key": "customerId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Crear cliente personal",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documentNumber\": \"45678912\",\n  \"customerType\": \"PERSONAL\",\n  \"fullName\": \"Juan Perez\",\n  \"email\": \"juan.perez@mail.com\",\n  \"phoneNumber\": \"999888777\",\n  \"address\": \"Av. Siempre Viva 123\"\n}"
+        },
+        "url": "{{baseUrl}}"
+      }
+    },
+    {
+      "name": "Crear cliente empresarial",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documentNumber\": \"20456789123\",\n  \"customerType\": \"BUSINESS\",\n  \"fullName\": \"Comercial ACME SAC\",\n  \"email\": \"contacto@acme.com\",\n  \"phoneNumber\": \"016543210\",\n  \"address\": \"Jr. Comercio 456\"\n}"
+        },
+        "url": "{{baseUrl}}"
+      }
+    },
+    {
+      "name": "Listar todos los clientes",
+      "request": { "method": "GET", "url": "{{baseUrl}}" }
+    },
+    {
+      "name": "Obtener cliente por id",
+      "request": { "method": "GET", "url": "{{baseUrl}}/{{customerId}}" }
+    },
+    {
+      "name": "Actualizar cliente",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documentNumber\": \"45678912\",\n  \"customerType\": \"PERSONAL\",\n  \"fullName\": \"Juan Perez Gomez\",\n  \"email\": \"juan.perez@mail.com\",\n  \"phoneNumber\": \"999888777\",\n  \"address\": \"Nueva direccion 789\"\n}"
+        },
+        "url": "{{baseUrl}}/{{customerId}}"
+      }
+    },
+    {
+      "name": "Eliminar cliente",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/{{customerId}}" }
+    },
+    {
+      "name": "Crear cliente con documento duplicado (debe fallar 409)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"documentNumber\": \"45678912\",\n  \"customerType\": \"PERSONAL\",\n  \"fullName\": \"Duplicado\",\n  \"email\": \"otro@mail.com\"\n}"
+        },
+        "url": "{{baseUrl}}"
+      }
+    }
+  ]
+}

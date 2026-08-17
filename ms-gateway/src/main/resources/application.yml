@@ -1,0 +1,100 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: ms-auth
+          uri: lb://ms-auth
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: ms-customers
+          uri: lb://ms-customers
+          predicates:
+            - Path=/api/v1/customers/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: customersCircuitBreaker
+                fallbackUri: forward:/fallback/customers
+        - id: ms-accounts
+          uri: lb://ms-accounts
+          predicates:
+            - Path=/api/v1/accounts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: accountsCircuitBreaker
+                fallbackUri: forward:/fallback/accounts
+        - id: ms-credits
+          uri: lb://ms-credits
+          predicates:
+            - Path=/api/v1/credits/**,/api/v1/cards/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: creditsCircuitBreaker
+                fallbackUri: forward:/fallback/credits
+        - id: ms-yanki
+          uri: lb://ms-yanki
+          predicates:
+            - Path=/api/v1/wallets/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: yankiCircuitBreaker
+                fallbackUri: forward:/fallback/yanki
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:cambia-esta-clave-super-secreta-de-al-menos-32-bytes-para-hmac256}
+
+# Resilience4j: timeout de 2 segundos exigido por el enunciado,
+# aplicado a todos los circuit breakers del gateway.
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 2s
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+    instances:
+      customersCircuitBreaker:
+        base-config: default
+      accountsCircuitBreaker:
+        base-config: default
+      creditsCircuitBreaker:
+        base-config: default
+      yankiCircuitBreaker:
+        base-config: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO

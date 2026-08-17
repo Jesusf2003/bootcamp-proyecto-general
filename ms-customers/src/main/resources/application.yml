@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: ms-customers
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        max-attempts: 5
+        initial-interval: 2000
+
+# Valores por defecto (se sobrescriben con lo que entrega el config-server)
+server:
+  port: 8090

@@ -1,0 +1,180 @@
+{
+  "info": {
+    "name": "Banco - Parte III (JWT + Redis + Kafka + Yanki)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "accountId", "value": "" },
+    { "key": "cardId", "value": "" },
+    { "key": "debitCardId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Login (obtener JWT)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "02 - Crear cliente (requiere token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"documentNumber\": \"45678912\",\n  \"customerType\": \"PERSONAL\",\n  \"fullName\": \"Juan Perez\",\n  \"email\": \"juan.perez@mail.com\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/customers"
+      }
+    },
+    {
+      "name": "03 - Consultar cliente (1ra vez = cache MISS)",
+      "request": {
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "method": "GET",
+        "url": "{{gatewayUrl}}/api/v1/customers/{{customerId}}"
+      }
+    },
+    {
+      "name": "04 - Consultar cliente otra vez (cache HIT en Redis)",
+      "request": {
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "method": "GET",
+        "url": "{{gatewayUrl}}/api/v1/customers/{{customerId}}"
+      }
+    },
+    {
+      "name": "05 - Aperturar cuenta de ahorro",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"openingAmount\": 100\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts"
+      }
+    },
+    {
+      "name": "06 - Depositar (genera evento Kafka)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 200,\n  \"description\": \"Deposito inicial\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/deposits"
+      }
+    },
+    {
+      "name": "07 - Ver notificaciones generadas por Kafka",
+      "request": {
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "method": "GET",
+        "url": "{{gatewayUrl}}/api/v1/notifications"
+      }
+    },
+    {
+      "name": "08 - Emitir tarjeta de debito",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"primaryAccountId\": \"{{accountId}}\",\n  \"associatedAccountIds\": []\n}" },
+        "url": "{{gatewayUrl}}/api/v1/debit-cards"
+      }
+    },
+    {
+      "name": "09 - Pagar con tarjeta de debito",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 20,\n  \"description\": \"Compra en tienda\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/debit-cards/{{debitCardId}}/payments"
+      }
+    },
+    {
+      "name": "10 - Emitir tarjeta de credito",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"cardType\": \"PERSONAL\",\n  \"creditLimit\": 1000\n}" },
+        "url": "{{gatewayUrl}}/api/v1/cards"
+      }
+    },
+    {
+      "name": "11 - Marcar tarjeta como vencida (simula batch de mora)",
+      "request": {
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "method": "PATCH",
+        "url": "{{gatewayUrl}}/api/v1/cards/{{cardId}}/overdue?overdue=true"
+      }
+    },
+    {
+      "name": "12 - Intentar abrir cuenta con deuda vencida (debe fallar 409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"CHECKING\",\n  \"openingAmount\": 0\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts"
+      }
+    },
+    {
+      "name": "13 - Revertir deuda vencida",
+      "request": {
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "method": "PATCH",
+        "url": "{{gatewayUrl}}/api/v1/cards/{{cardId}}/overdue?overdue=false"
+      }
+    },
+    {
+      "name": "14 - Registrar wallet Yanki",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"phoneNumber\": \"987654321\",\n  \"customerId\": \"{{customerId}}\",\n  \"documentNumber\": \"45678912\",\n  \"linkedAccountId\": \"{{accountId}}\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/wallets"
+      }
+    },
+    {
+      "name": "15 - Enviar dinero por celular (Yanki)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"fromPhoneNumber\": \"987654321\",\n  \"toPhoneNumber\": \"912345678\",\n  \"amount\": 50\n}" },
+        "url": "{{gatewayUrl}}/api/v1/wallets/send"
+      }
+    },
+    {
+      "name": "16 - Peticion SIN token (debe fallar 401)",
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayUrl}}/api/v1/customers"
+      }
+    }
+  ]
+}

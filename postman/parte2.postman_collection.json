@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "Banco - Parte II (via Gateway)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080" },
+    { "key": "customerId", "value": "" },
+    { "key": "accountId", "value": "" },
+    { "key": "targetAccountId", "value": "" },
+    { "key": "creditId", "value": "" },
+    { "key": "cardId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Crear cliente personal",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"documentNumber\": \"45678912\",\n  \"customerType\": \"PERSONAL\",\n  \"fullName\": \"Juan Perez\",\n  \"email\": \"juan.perez@mail.com\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/customers"
+      }
+    },
+    {
+      "name": "02 - Aperturar cuenta de ahorro",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"openingAmount\": 100\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts"
+      }
+    },
+    {
+      "name": "03 - Aperturar cuenta corriente (segunda, para probar transferencia)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"CHECKING\",\n  \"openingAmount\": 0\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts"
+      }
+    },
+    {
+      "name": "04 - Depositar en cuenta",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 200,\n  \"description\": \"Deposito inicial\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/deposits"
+      }
+    },
+    {
+      "name": "05 - Retirar de cuenta",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 50,\n  \"description\": \"Retiro cajero\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/withdrawals"
+      }
+    },
+    {
+      "name": "06 - Transferir entre cuentas propias",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"targetAccountId\": \"{{targetAccountId}}\",\n  \"amount\": 30,\n  \"description\": \"Transferencia entre mis cuentas\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/transfers"
+      }
+    },
+    {
+      "name": "07 - Consultar saldo",
+      "request": { "method": "GET", "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/balance" }
+    },
+    {
+      "name": "08 - Ultimos movimientos de la cuenta",
+      "request": { "method": "GET", "url": "{{gatewayUrl}}/api/v1/accounts/{{accountId}}/movements/last?limit=10" }
+    },
+    {
+      "name": "09 - Reporte general por producto (intervalo)",
+      "request": { "method": "GET", "url": "{{gatewayUrl}}/api/v1/accounts/reports?from=2026-01-01T00:00:00&to=2026-12-31T23:59:59" }
+    },
+    {
+      "name": "10 - Emitir tarjeta de credito",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"cardType\": \"PERSONAL\",\n  \"creditLimit\": 1000\n}" },
+        "url": "{{gatewayUrl}}/api/v1/cards"
+      }
+    },
+    {
+      "name": "11 - Consumo con tarjeta de credito",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 150,\n  \"description\": \"Compra en tienda\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/cards/{{cardId}}/consumptions"
+      }
+    },
+    {
+      "name": "12 - Pagar tarjeta de credito",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 50\n}" },
+        "url": "{{gatewayUrl}}/api/v1/cards/{{cardId}}/payments"
+      }
+    },
+    {
+      "name": "13 - Ultimos movimientos de tarjeta",
+      "request": { "method": "GET", "url": "{{gatewayUrl}}/api/v1/cards/{{cardId}}/movements/last" }
+    },
+    {
+      "name": "14 - Solicitar credito personal",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"creditType\": \"PERSONAL\",\n  \"amount\": 5000\n}" },
+        "url": "{{gatewayUrl}}/api/v1/credits"
+      }
+    },
+    {
+      "name": "15 - Pagar credito",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 500\n}" },
+        "url": "{{gatewayUrl}}/api/v1/credits/{{creditId}}/payments"
+      }
+    },
+    {
+      "name": "16 - Aperturar cuenta de ahorro con perfil VIP (requiere ya tener tarjeta)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"openingAmount\": 500,\n  \"requestedProfile\": \"VIP\"\n}" },
+        "url": "{{gatewayUrl}}/api/v1/accounts"
+      }
+    },
+    {
+      "name": "17 - Dashboard de Eureka (ver servicios registrados)",
+      "request": { "method": "GET", "url": "http://localhost:8761" }
+    }
+  ]
+}
